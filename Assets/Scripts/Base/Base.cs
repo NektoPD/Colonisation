@@ -1,32 +1,39 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
+[RequireComponent(typeof(OnBaseClickHandler))]
+[RequireComponent(typeof(BaseFlagCounter))]
 public class Base : MonoBehaviour
 {
-    [SerializeField] private Map _map;
     [SerializeField] private int _resourceCount = 0;
 
-    public UnityEvent ReadyToBuildBase;
-    public UnityEvent StopedBuildingBase;
+    public event Action ReadyToBuildBase;
+    public event Action StopedBuildingBase;
     private UnitSpawner _spawner;
     private Scanner _scanner;
-    private List<Unit> _units = new List<Unit>();
+    private Queue<Unit> _units = new Queue<Unit>();
     private List<Resource> _filteredResources = new List<Resource>();
-    private Unit _availableUnit;
     private OnBaseClickHandler _onBaseClickHandler;
     private BaseFlagCounter _flagCounter;
     private int _unitSpawnValue = 3;
     private int _baseBuildValue = 5;
+    private bool _readyToBuildBase = false;
 
     public bool IsBulidingBase { get; private set; }
+    public Map Map { get; private set; }
 
     private void Awake()
     {
         _onBaseClickHandler = GetComponent<OnBaseClickHandler>();
         _spawner = GetComponentInChildren<UnitSpawner>();
         _flagCounter = GetComponent<BaseFlagCounter>();
+    }
+
+    private void Start()
+    {
+        CreateNewUnit();
     }
 
     public void ObtainResource()
@@ -36,38 +43,45 @@ public class Base : MonoBehaviour
         if (_resourceCount == _unitSpawnValue && !IsBulidingBase)
         {
             CreateNewUnit();
+            ClearResourceCount();
         }
         else if (_resourceCount == _baseBuildValue && IsBulidingBase)
         {
             ReadyToBuildBase?.Invoke();
-            CreateNewBase();
+            _readyToBuildBase = true;
+            ClearResourceCount();
         }
     }
 
     public void SetScanner(Scanner scanner)
     {
         _scanner = scanner;
-
         StartCoroutine(FindAvailableUnit());
-        _scanner.Detected += AssignResourcesToUnits;
     }
 
-    public Map GetMap()
-    {
-        return _map;
-    }
-
-    public void GarheringResourcesToBuildBase()
+    public void IsReadyToBuildBase()
     {
         IsBulidingBase = true;
     }
 
-    public void StopGarheringResourcesToBuildBase()
+    public void ReturnToBuildingUnits()
     {
+        _readyToBuildBase = false;
         IsBulidingBase = false;
-        StopedBuildingBase?.Invoke();
         _onBaseClickHandler.SetClickedToFalse();
-        StartCoroutine(FindAvailableUnit());
+        StopedBuildingBase?.Invoke();
+        Map.FlagSpawned -= IsReadyToBuildBase;
+        Map.FlagSpawned -= _flagCounter.ClearCount;
+    }
+
+    public void RemoveAllUnits()
+    {
+        _units.Clear();
+    }
+
+    public void AddUnit(Unit unit)
+    {
+        _units.Enqueue(unit);
     }
 
     public bool IsFlagAvailable()
@@ -77,42 +91,45 @@ public class Base : MonoBehaviour
 
     public void SetMap(Map map)
     {
-        _map = map;
-        _map.SetBase(this, _onBaseClickHandler);
-        _map.FlagSpawned.AddListener(GarheringResourcesToBuildBase);
-        _map.FlagSpawned.AddListener(_flagCounter.ClearCount);
+        Map = map;
+        Map.SetBase(this, _onBaseClickHandler);
+        Map.FlagSpawned += IsReadyToBuildBase;
+        Map.FlagSpawned += _flagCounter.ClearCount;
     }
 
-    private void AssignResourcesToUnits()
+    public void AssignResourcesToUnits(Unit unit)
     {
         Resource resource = _scanner.GetResource();
 
         if (resource != null && !_filteredResources.Contains(resource))
         {
             _filteredResources.Add(resource);
-            _availableUnit.AssignCurrentResource(resource, resource.transform);
+            unit.AssignCurrentResource(resource, resource.transform);
         }
         else
         {
+            _scanner.ScanForResources();
+            AssignResourcesToUnits(unit);
             return;
         }
     }
 
     private IEnumerator FindAvailableUnit()
     {
-        if (_units.Count == 0)
-        {
-            _units.Add(_spawner.CreateUnit());
-        }
-
         while (true)
         {
-            foreach (Unit unit in _units)
+            if (_units.Count > 0)
             {
-                if (!unit.IsBusy && !unit.IsReadyToBuildBase)
+                if (!_readyToBuildBase)
                 {
-                    _availableUnit = unit;
+                    Unit unit = _units.Dequeue();
                     _scanner.ScanForResources();
+                    AssignResourcesToUnits(unit);
+                }
+                else
+                {
+                    Unit unit = _units.Dequeue();
+                    CreateNewBase(unit);
                 }
             }
 
@@ -122,19 +139,17 @@ public class Base : MonoBehaviour
 
     private void CreateNewUnit()
     {
-        _units.Add(_spawner.CreateUnit());
-        ClearResourceCount();
+        _units.Enqueue(_spawner.CreateUnit());
     }
 
-    private void CreateNewBase()
+    private void CreateNewBase(Unit unit)
     {
-        if (_availableUnit != null)
+        if (unit != null)
         {
-            _availableUnit.SetReadyToBuildBase();
-            _availableUnit.GetComponent<UnitBaseBuilder>().BaseBuilt.AddListener(StopGarheringResourcesToBuildBase);
-            _availableUnit.AssignBaseToBuild(_map.GetCurrentFlagPosition());
+            unit.SetReadyToBuildBase();
+            unit.SetTarget(Map.GetCurrentFlagPosition());
             ClearResourceCount();
-            StopCoroutine(FindAvailableUnit());
+            ReturnToBuildingUnits();
         }
     }
 

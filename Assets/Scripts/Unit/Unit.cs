@@ -7,7 +7,7 @@ public class Unit : MonoBehaviour
 {
     [SerializeField] private Base _base;
 
-    private Resource _currentResource;
+    [SerializeField] private Resource _currentResource;
     private UnitMover _mover;
     private UnitResourceCollector _collector;
     private UnitBaseBuilder _builder;
@@ -23,6 +23,11 @@ public class Unit : MonoBehaviour
         _builder = GetComponent<UnitBaseBuilder>();
     }
 
+    private void Update()
+    {
+       
+    }
+
     public void SetBase(Base @base)
     {
         _base = @base;
@@ -30,24 +35,20 @@ public class Unit : MonoBehaviour
 
     public void AssignCurrentResource(Resource resource, Transform position)
     {
-        if (resource != null || IsBusy == false)
+        if (resource != null)
         {
             _currentResource = resource;
             SetTarget(position.position);
             IsBusy = true;
         }
+        else
+        {
+            _base.AssignResourcesToUnits(this);
+        }
     }
     public void SetReadyToBuildBase()
     {
         IsReadyToBuildBase = true;
-    }
-
-    public void AssignBaseToBuild(Vector3 position)
-    {
-        if (position != null)
-        {
-            _mover.SetTarget(position);
-        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -66,18 +67,19 @@ public class Unit : MonoBehaviour
             _collector.DropOffResource(_currentResource);
             IsBusy = false;
             _base.ObtainResource();
+            _base.AddUnit(this);
         }
 
         if (IsReadyToBuildBase && other.TryGetComponent<Flag>(out Flag flag))
         {
             flag.gameObject.SetActive(false);
-            _builder.BuildBase(_base.GetMap());
+            _builder.BuildBase(_base.Map);
             IsBusy = false;
             IsReadyToBuildBase = false;
         }
     }
 
-    private void SetTarget(Vector3 targetPosition)
+    public void SetTarget(Vector3 targetPosition)
     {
         _mover.SetTarget(targetPosition);
     }

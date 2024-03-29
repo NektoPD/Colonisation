@@ -16,9 +16,4 @@ public class BaseFlagCounter : MonoBehaviour
     {
         Count = _minCount;
     }
-
-    public void RestoreCount()
-    {
-        Count = _maxCount;
-    }
 }

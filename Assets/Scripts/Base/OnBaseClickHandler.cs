@@ -1,5 +1,5 @@
+using System;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(MeshRenderer))]
@@ -8,7 +8,7 @@ public class OnBaseClickHandler : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private Material _material;
 
-    public UnityEvent OnBaseClick = new UnityEvent();
+    public event Action OnBaseClick;
     private MeshRenderer _meshRenderer;
     private Material _startMaterial;
     private BaseFlagCounter _flagCounter;

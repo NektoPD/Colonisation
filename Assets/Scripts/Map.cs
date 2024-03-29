@@ -1,5 +1,5 @@
+using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 [RequireComponent(typeof(Scanner))]
 public class Map : MonoBehaviour
@@ -9,7 +9,7 @@ public class Map : MonoBehaviour
     [SerializeField] private Flag _flagTemplate;
     [SerializeField] private MousePosition _mousePosition;
 
-    public UnityEvent FlagSpawned = new UnityEvent();
+    public event Action FlagSpawned;
     private Scanner _scanner;
     private OnBaseClickHandler _baseClicker;
     private Flag _currentFlag;
@@ -29,9 +29,9 @@ public class Map : MonoBehaviour
     {
         _base = baseToassign;
         _baseClicker = clicker;
-        _baseClicker.OnBaseClick.AddListener(DetectBaseClick);
-        _base.ReadyToBuildBase.AddListener(SetBaseBuildingStateToTrue);
-        _base.StopedBuildingBase.AddListener(SetBaseBuildingStateToFalse);
+        _baseClicker.OnBaseClick += DetectBaseClick;
+        _base.ReadyToBuildBase += SetBaseBuildingStateToTrue;
+        _base.StopedBuildingBase += SetBaseBuildingStateToFalse;
         _base.SetScanner(_scanner);
     }
 
@@ -79,13 +79,17 @@ public class Map : MonoBehaviour
     private void SetBaseBuildingStateToFalse()
     {
         _baseIsBuildingBase = false;
+        _base.ReadyToBuildBase -= SetBaseBuildingStateToTrue;
+        _base.StopedBuildingBase -= SetBaseBuildingStateToFalse;
+        _baseClicker.OnBaseClick -= DetectBaseClick;
+        _terrain.OnTerrainClicked -= PutFlag;
     }
 
     private void DetectTerrainClick()
     {
         if (_terrain != null)
         {
-            _terrain.OnTerrainClicked.AddListener(PutFlag);
+            _terrain.OnTerrainClicked += PutFlag;
         }
     }  
 }
