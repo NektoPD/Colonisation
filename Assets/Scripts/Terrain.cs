@@ -4,10 +4,10 @@ using UnityEngine.EventSystems;
 
 public class Terrain : MonoBehaviour, IPointerClickHandler
 {
-    public event Action OnTerrainClicked;
+    public event Action TerrainClicked;
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        OnTerrainClicked?.Invoke();
+        TerrainClicked?.Invoke();
     }
 }

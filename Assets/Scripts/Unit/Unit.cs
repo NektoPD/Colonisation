@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(UnitResourceCollector))]
@@ -7,13 +8,16 @@ public class Unit : MonoBehaviour
 {
     [SerializeField] private Base _base;
 
-    [SerializeField] private Resource _currentResource;
+    private Resource _currentResource;
     private UnitMover _mover;
     private UnitResourceCollector _collector;
     private UnitBaseBuilder _builder;
+    private BaseResourceHandler _resourceHandler;
 
     public bool IsBusy {get; private set;}
     public bool IsReadyToBuildBase { get; private set; }
+
+    public event Action BroughtResourceToBase;
 
     private void Start()
     {
@@ -23,14 +27,10 @@ public class Unit : MonoBehaviour
         _builder = GetComponent<UnitBaseBuilder>();
     }
 
-    private void Update()
-    {
-       
-    }
-
     public void SetBase(Base @base)
     {
         _base = @base;
+        _resourceHandler = _base.GetComponent<BaseResourceHandler>();
     }
 
     public void AssignCurrentResource(Resource resource, Transform position)
@@ -43,7 +43,7 @@ public class Unit : MonoBehaviour
         }
         else
         {
-            _base.AssignResourcesToUnits(this);
+            _resourceHandler.AssignResourcesToUnits(this);
         }
     }
     public void SetReadyToBuildBase()
@@ -66,7 +66,7 @@ public class Unit : MonoBehaviour
         {
             _collector.DropOffResource(_currentResource);
             IsBusy = false;
-            _base.ObtainResource();
+            BroughtResourceToBase?.Invoke();
             _base.AddUnit(this);
         }
 

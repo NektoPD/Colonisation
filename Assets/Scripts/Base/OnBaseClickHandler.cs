@@ -8,12 +8,13 @@ public class OnBaseClickHandler : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private Material _material;
 
-    public event Action OnBaseClick;
     private MeshRenderer _meshRenderer;
     private Material _startMaterial;
     private BaseFlagCounter _flagCounter;
 
     public bool ClickedOnBase { get; private set; }
+
+    public event Action OnBaseClick;
 
     private void Awake()
     {

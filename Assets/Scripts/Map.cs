@@ -9,11 +9,12 @@ public class Map : MonoBehaviour
     [SerializeField] private Flag _flagTemplate;
     [SerializeField] private MousePosition _mousePosition;
 
-    public event Action FlagSpawned;
     private Scanner _scanner;
     private OnBaseClickHandler _baseClicker;
     private Flag _currentFlag;
     private bool _baseIsBuildingBase = false;
+
+    public event Action FlagSpawned;
 
     private void Awake()
     {
@@ -82,14 +83,14 @@ public class Map : MonoBehaviour
         _base.ReadyToBuildBase -= SetBaseBuildingStateToTrue;
         _base.StopedBuildingBase -= SetBaseBuildingStateToFalse;
         _baseClicker.OnBaseClick -= DetectBaseClick;
-        _terrain.OnTerrainClicked -= PutFlag;
+        _terrain.TerrainClicked -= PutFlag;
     }
 
     private void DetectTerrainClick()
     {
         if (_terrain != null)
         {
-            _terrain.OnTerrainClicked += PutFlag;
+            _terrain.TerrainClicked += PutFlag;
         }
     }  
 }

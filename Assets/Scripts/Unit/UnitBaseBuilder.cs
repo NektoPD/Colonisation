@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class UnitBaseBuilder : MonoBehaviour
 {
     [SerializeField] private Base _basePrefab;
 
-    public event Action BaseBuilt;
     private Unit _unit;
     private Base _baseToBuild;
+
+    public event Action BaseBuilt;
 
     private void Awake()
     {

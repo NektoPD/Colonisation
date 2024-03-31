@@ -7,8 +7,9 @@ public class Scanner : MonoBehaviour
     [SerializeField] private float _scanRadius;
     [SerializeField] private LayerMask _resourceLayer;
 
-    public event UnityAction Detected;
     private Queue<Resource> _resources = new Queue<Resource>();
+
+    public event UnityAction Detected;
 
     public void ScanForResources()
     {
